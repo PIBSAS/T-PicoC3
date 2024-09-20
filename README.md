@@ -8,8 +8,17 @@
 
 ## Notice 
 ### In TYPE-C, you can determine whether the current connection is PICO or ESP32C3 through positive and negative access. 
+
 ![](image/usb-pico.png)
+
+<span style="color:red;">Blue LED</span>
+
+<span style="color:blue;">**Blue LED indicating RP2040 side.**</span>
+
+
 ![](image/usb-esp32c3.png)
+- Green LED indicating ESP32 C3 side.
+
 ### When connecting, the onboard LED lamp will be indicated according to the connected chip (due to cable problems, it is possible that the indicator light is opposite to the actual connected chip, or even two LED lights at the same time, please replace another cable when two led lights up at the same time), the main judgment is that the currently connected device is displayed in the serial port name.
 ![](image/select-pico.png)
 ![](image/select-esp32c3.png)
