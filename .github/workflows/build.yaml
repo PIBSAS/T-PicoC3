@@ -128,7 +128,20 @@ jobs:
       with:
         tag_name: ${{ env.TAG_NAME }}
         name: "MicroPython + ST7789 Display Driver for LilyGo T-PicoC3 Display Release version ${{ env.MPY_VERSION }} (Build ${{ env.TAG_NAME }})"
-        body: "Automated release for MicroPython."
+        body: |
+          Automated release for MicroPython.
+          ## How to Flash the Firmware
+          ### Windows, Linux:
+          1. Download the .uf2 file from the release.
+          2. Press and hold the BOOT button on the RP2040 and press RESET button or connect it to your computer via USB.
+          3. Release the button. The RP2040  will appear as a removable drive.
+          4. Drag and drop the .uf2 file onto the drive..
+          5. The RP2040 will reboot and run MicroPython..
+
+          ## Examples Usage
+          Please use the examples located in the [examples folder of the st7789_mpy repository](https://github.com/russhughes/st7789_mpy/tree/master/examples).
+          
+          New Examples in [TPicoESPC3 module repo](https://github.com/PIBSAS/TPicoESPC3/tree/main/examples) and remake to micropython vendor's codes.
         draft: false
         prerelease: false
         files: ./artifacts/*
