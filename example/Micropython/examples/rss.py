@@ -1,4 +1,7 @@
 # RP2040 Side Code
+"""
+This need rss_esp.py to work and secrets.py with SSID, PASSWORD and RSS_URL more detail on rss_esp.py
+"""
 from machine import UART, Pin
 import st7789
 import tft_config
