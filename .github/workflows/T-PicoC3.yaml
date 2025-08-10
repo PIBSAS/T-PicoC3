@@ -1,0 +1,203 @@
+name: MicroPython for T-Pico C3 Display ESP32-C3 Side.
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'v*'
+  schedule:
+    - cron: '0 0 */14 * *'
+
+  workflow_dispatch:
+
+jobs:
+  build-esp32-c3:
+    runs-on: ubuntu-latest
+    env:
+      IDF_CCACHE_ENABLE: 1
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4.2.2
+      
+      - name: Clone MicroPython
+        run: |
+          git clone --depth 1 https://github.com/micropython/micropython.git
+       
+      - id: idf_ver
+        name: Read ESP-IDF and Python version from tools/ci.sh
+        run: |
+          source micropython/tools/ci.sh
+          echo "IDF_VER=${IDF_VER}" | tee -a "$GITHUB_OUTPUT"
+          echo "PYTHON_VER=${PYTHON_VER}" | tee -a "$GITHUB_OUTPUT"
+      
+      - name: Setup Python from ci.sh
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: ${{ steps.idf_ver.outputs.PYTHON_VER }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget cmake ninja-build ccache
+          pip3 install --upgrade pip
+          pip3 install pyelftools ar
+      
+      - name: Cache ESP-IDF and environment
+        id: cache-esp
+        uses: actions/cache@v4.2.3
+        with:
+          path: |
+            esp-idf
+            ~/.espressif
+          key: esp-full-${{ runner.os }}-${{ steps.idf_ver.outputs.IDF_VER }}-${{ hashFiles('micropython/tools/ci.sh') }}
+          restore-keys: |
+            esp-full-${{ runner.os }}-${{ steps.idf_ver.outputs.IDF_VER }}-
+      
+      - name: Setup ESP-IDF
+        run: |
+          if [ ! -d "esp-idf" ]; then
+            git clone --depth 1 --branch ${{ steps.idf_ver.outputs.IDF_VER }} https://github.com/espressif/esp-idf.git
+            git -C esp-idf submodule update --init --recursive --depth=1
+          fi
+          
+          if [ ! -d "$HOME/.espressif/python_env" ]; then
+            echo "Instalando entorno virtual de ESP-IDF..."
+            ./esp-idf/install.sh
+          fi
+     
+      - name: Set up environment
+        run: |
+          source esp-idf/export.sh
+          echo "IDF_PATH=$GITHUB_WORKSPACE/esp-idf" >> $GITHUB_ENV
+          idf.py --version
+    
+      - name: Build ESP32-C3 port
+        run: |
+          source esp-idf/export.sh
+          cd ${{ github.workspace }}/micropython
+          make -j$(nproc) -C mpy-cross
+          make -j$(nproc) -C ports/esp32 submodules
+          make -j$(nproc) -C ports/esp32 BOARD=ESP32_C3
+          
+      - name: Verify build artifacts
+        run: |
+          ls -lh micropython/ports/esp32/build-ESP32_C3_CUSTOM/*.bin
+          ls -lh micropython/ports/esp32/build-ESP32_C3_CUSTOM/bootloader/*.bin
+          ls -lh micropython/ports/esp32/build-ESP32_C3_CUSTOM/partition_table/*.bin
+          
+      - name: Prepare artifacts for release
+        run: |
+          mkdir -p artifacts
+          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/firmware.bin artifacts/
+          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/micropython.bin artifacts/
+          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/bootloader/bootloader.bin artifacts/
+          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/partition_table/partition-table.bin artifacts/
+
+      - name: Verificar existencia de los cuatro binarios
+        run: |
+          if [ ! -f ./artifacts/firmware.bin ] || [ ! -f ./artifacts/micropython.bin ] || [ ! -f ./artifacts/bootloader.bin ] || [ ! -f ./artifacts/partition-table.bin ]; then
+            echo "Falta uno o más archivos binarios necesarios, cancelando release."
+            exit 1
+          fi
+
+      - name: Get MicroPython Version from mpconfig.h
+        run: |
+          cd micropython/
+          MAJOR=$(grep -oP '(?<=#define MICROPY_VERSION_MAJOR )[0-9]+' py/mpconfig.h)
+          MINOR=$(grep -oP '(?<=#define MICROPY_VERSION_MINOR )[0-9]+' py/mpconfig.h)
+          MICRO=$(grep -oP '(?<=#define MICROPY_VERSION_MICRO )[0-9]+' py/mpconfig.h)
+          PRERELEASE=$(grep -oP '(?<=#define MICROPY_VERSION_PRERELEASE )[0-9]+' py/mpconfig.h)
+  
+          if [ "$PRERELEASE" -eq 1 ]; then
+            MPY_VERSION="$MAJOR.$MINOR.$MICRO-preview"
+          else
+            MPY_VERSION="$MAJOR.$MINOR.$MICRO"
+          fi
+  
+          echo "MPY_VERSION=$MPY_VERSION" >> $GITHUB_ENV
+
+      - name: Generate Tag
+        id: tag
+        run: echo "TAG_NAME=release-$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
+
+      - name: GH Release
+        uses: softprops/action-gh-release@v2.3.2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          name: "MicroPython for T-Pico C3 Display side ESP32-C3 Release version ${{ env.MPY_VERSION }} (Build ${{ env.TAG_NAME }})"
+          body: |
+            Automated release of MicroPython for T-Pico C3 Display side ESP32-C3.
+            - What we get here:
+               - ```micropython.bin, bootloader.bin and partition-table.bin plus firmware.bin that is all 3 .bin in just 1 ```
+            
+            # Instructions
+            
+            You need to have some dependencies pre-instaled in your OS:
+            - Python 3
+            - Pip
+            - Python VENV
+            
+            ## Windows or Linux:
+            Create Virtual Environment
+            ```bash
+            python -m venv esp-env
+            ```
+            
+            ### On Windows activate Virtual Environment this way:
+            ```bash
+            .\esp-env\Scripts\activate
+            ```
+            ### On Linux activate Virtual Environment this way:
+            ```bash
+            source esp-env/bin/activate
+            ```
+            
+            ### On Windows or Linux install esptool:
+            ```bash
+            pip install esptool
+            ```
+            
+            ### Put T-Pico C3 Display side ESP32-C3 in BOOTLOADER MODE:
+            - With USB cable on USB, press BOOT button then RST button, release RST, then release BOOT button. Or unplug, press BOOT button meanwhile you plug in the usb port on PC or SBC like a Raspberry Pi.
+            - Alternative: Use Thonny IDE, plug your T-Pico C3 Display side ESP32-C3, on Thonny Shell type:
+            ```bash
+            from machine import bootloader
+            ```
+            Press ``Enter`` then type:
+            ```bash
+            bootloader()
+            ```
+            Press ``Enter`` then just close Thonny and go to Terminal with Virtual Environment activate.
+            
+            ### Erase Flash:
+            ```bash
+            python -m esptool --chip esp32c3 erase-flash
+            ```
+            
+            #### Then Flash:
+            - Put 3 binaries in the same folder you are executing the steps, example Downloads folder, you need to be in that folder where are the binaries.
+            ```bash
+            python -m esptool --chip esp32c3 -b 460800 --before default-reset --after hard-reset write-flash --flash-mode dio --flash-size 4MB --flash-freq 80m 0x0 bootloader.bin 0x8000 partition-table.bin 0x10000 micropython.bin
+            ```
+            - If you use the firmware.bin then:
+            ```bash
+            python -m esptool --chip esp32c3 --baud 460800 write-flash 0x0 firmware.bin
+            ```
+            
+            ### NOTE IN WINDOWS:
+            - If you get a PowerShell Scripts Policy Execution Exception that don't let you activate the Virtual Environment:
+            
+            - Then open a Terminal like Administrator and type:
+            
+            ```bash
+            Set-ExecutionPolicy Unrestricted
+            ```
+            - Close the Terminal now you can activate the Python Virtual Enmvironment
+            
+          draft: false
+          prerelease: false
+          files: ./artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
