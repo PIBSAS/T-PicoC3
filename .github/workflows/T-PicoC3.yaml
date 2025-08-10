@@ -79,21 +79,21 @@ jobs:
           cd ${{ github.workspace }}/micropython
           make -j$(nproc) -C mpy-cross
           make -j$(nproc) -C ports/esp32 submodules
-          make -j$(nproc) -C ports/esp32 BOARD=ESP32_C3
+          make -j$(nproc) -C ports/esp32 BOARD=ESP32_GENERIC_C3
           
       - name: Verify build artifacts
         run: |
-          ls -lh micropython/ports/esp32/build-ESP32_C3_CUSTOM/*.bin
-          ls -lh micropython/ports/esp32/build-ESP32_C3_CUSTOM/bootloader/*.bin
-          ls -lh micropython/ports/esp32/build-ESP32_C3_CUSTOM/partition_table/*.bin
+          ls -lh micropython/ports/esp32/build-ESP32_GENERIC_C3/*.bin
+          ls -lh micropython/ports/esp32/build-ESP32_GENERIC_C3/bootloader/*.bin
+          ls -lh micropython/ports/esp32/build-ESP32_GENERIC_C3/partition_table/*.bin
           
       - name: Prepare artifacts for release
         run: |
           mkdir -p artifacts
-          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/firmware.bin artifacts/
-          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/micropython.bin artifacts/
-          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/bootloader/bootloader.bin artifacts/
-          cp micropython/ports/esp32/build-ESP32_C3_CUSTOM/partition_table/partition-table.bin artifacts/
+          cp micropython/ports/esp32/build-ESP32_GENERIC_C3/firmware.bin artifacts/
+          cp micropython/ports/esp32/build-ESP32_GENERIC_C3/micropython.bin artifacts/
+          cp micropython/ports/esp32/build-ESP32_GENERIC_C3/bootloader/bootloader.bin artifacts/
+          cp micropython/ports/esp32/build-ESP32_GENERIC_C3/partition_table/partition-table.bin artifacts/
 
       - name: Verificar existencia de los cuatro binarios
         run: |
