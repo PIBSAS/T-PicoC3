@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Clone repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5.0.0
       
     - name: Clone Micropython
       run: git clone --recurse-submodules https://github.com/micropython/micropython.git
@@ -26,7 +26,7 @@ jobs:
     - name: Clone st7789_mpy
       run: git clone https://github.com/russhughes/st7789_mpy.git
 
-    - name: Clone TPicoESPC3 Wifi module
+    - name: Clone TPicoESPC3 Wifi AT module require ESP-AT Firmware on ESP32-C3 Side
       run: git clone https://github.com/PIBSAS/TPicoESPC3.git
 
     - name: Copy tft_config, tft_buttons and some fonts like frozen modules
@@ -101,7 +101,7 @@ jobs:
     - name: Move .uf2 files to artifacts
       run: |
         mkdir -p ./artifacts
-        cp micropython/ports/rp2/build-RPI_PICO/*.uf2 ./artifacts/RP2040.uf2
+        cp micropython/ports/rp2/build-RPI_PICO/*.uf2 ./artifacts/T-PicoC3.uf2
             
     - name: Get MicroPython Version from mpconfig.h
       run: |
@@ -124,7 +124,7 @@ jobs:
       run: echo "TAG_NAME=release-$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
       
     - name: GH Release
-      uses: softprops/action-gh-release@v2.0.8
+      uses: softprops/action-gh-release@v2.3.2
       with:
         tag_name: ${{ env.TAG_NAME }}
         name: "MicroPython + ST7789 Display Driver for LilyGo T-PicoC3 Display Release version ${{ env.MPY_VERSION }} (Build ${{ env.TAG_NAME }})"
