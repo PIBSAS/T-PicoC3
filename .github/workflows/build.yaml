@@ -1,4 +1,4 @@
-name: T-Display-Pico C3
+name: T-Display-Pico C3 Side RP2040
 
 permissions:
   contents: write
@@ -8,7 +8,7 @@ on:
     tags:
      - 'v*'
   schedule:
-     - cron: '0 0 1 * *'
+     - cron: '0 0 */14 * *'
   
   workflow_dispatch:
 
