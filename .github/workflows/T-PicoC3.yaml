@@ -28,7 +28,8 @@ jobs:
       - id: idf_ver
         name: Read ESP-IDF and Python version from tools/ci.sh
         run: |
-          source micropython/tools/ci.sh
+          cd "$GITHUB_WORKSPACE/micropython"
+          source $GITHUB_WORKSPACE/micropython/tools/ci.sh
           echo "IDF_VER=${IDF_VER}" | tee -a "$GITHUB_OUTPUT"
           echo "PYTHON_VER=${PYTHON_VER}" | tee -a "$GITHUB_OUTPUT"
       
