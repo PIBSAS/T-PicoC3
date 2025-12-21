@@ -8,7 +8,7 @@ on:
     tags:
      - 'v*'
   schedule:
-     - cron: '0 0 */14 * *'
+     - cron: '0 0 1 * *'
   
   workflow_dispatch:
 
@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Clone repo
-      uses: actions/checkout@v5.0.0
+      uses: actions/checkout@v6.0.1
       
     - name: Clone Micropython
       run: git clone --recurse-submodules https://github.com/micropython/micropython.git
@@ -124,7 +124,7 @@ jobs:
       run: echo "TAG_NAME=release-$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
       
     - name: GH Release
-      uses: softprops/action-gh-release@v2.3.3
+      uses: softprops/action-gh-release@v2.5.0
       with:
         tag_name: ${{ env.TAG_NAME }}
         name: "MicroPython + ST7789 Display Driver for LilyGo T-PicoC3 Display Release version ${{ env.MPY_VERSION }} (Build ${{ env.TAG_NAME }})"
