@@ -18,10 +18,10 @@ jobs:
 
     steps:
     - name: Clone repo
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@v7
       
     - name: Clone Micropython
-      run: git clone --recurse-submodules https://github.com/micropython/micropython.git
+      run: git clone --recursive https://github.com/micropython/micropython.git
 
     - name: Clone st7789_mpy
       run: git clone https://github.com/russhughes/st7789_mpy.git
@@ -92,11 +92,11 @@ jobs:
     - name: Build MicroPython for RP2040
       run: |
         cd micropython
-        make -C mpy-cross
+        make -$j(nproc) -C mpy-cross
         cd ports/rp2
-        make USER_C_MODULES=$GITHUB_WORKSPACE/st7789_mpy/st7789/micropython.cmake
-        make submodules
-        make
+        make -j$(nproc) USER_C_MODULES=$GITHUB_WORKSPACE/st7789_mpy/st7789/micropython.cmake
+        make -j$(nproc) submodules
+        make -j$(nproc)
 
     - name: Move .uf2 files to artifacts
       run: |
@@ -124,7 +124,7 @@ jobs:
       run: echo "TAG_NAME=release-$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
       
     - name: GH Release
-      uses: softprops/action-gh-release@v2.5.0
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ env.TAG_NAME }}
         name: "MicroPython + ST7789 Display Driver for LilyGo T-PicoC3 Display Release version ${{ env.MPY_VERSION }} (Build ${{ env.TAG_NAME }})"
