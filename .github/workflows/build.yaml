@@ -92,7 +92,7 @@ jobs:
     - name: Build MicroPython for RP2040
       run: |
         cd micropython
-        make -$j(nproc) -C mpy-cross
+        make -j$(nproc) -C mpy-cross
         cd ports/rp2
         make -j$(nproc) USER_C_MODULES=$GITHUB_WORKSPACE/st7789_mpy/st7789/micropython.cmake
         make -j$(nproc) submodules
